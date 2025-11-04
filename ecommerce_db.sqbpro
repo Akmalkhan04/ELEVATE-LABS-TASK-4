@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="ecommerce_db.sqlite" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="1519"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><table title="customers" custom_title="0" dock_id="2" table="4,9:maincustomers"/><dock_state state="000000ff00000000fd00000001000000020000000000000000fc0100000002fb000000160064006f0063006b00420072006f00770073006500310100000000ffffffff0000000000000000fb000000160064006f0063006b00420072006f00770073006500320100000000ffffffff0000011800ffffff000000000000000000000004000000040000000800000008fc00000000"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1*">-- ============================================
+-- ECOMMERCE SQL ANALYSIS PROJECT (FINAL VERSION)
+-- Safe to re-run anytime
+-- ============================================
+
+-- STEP 1: Drop existing tables and views if any
+DROP VIEW IF EXISTS customer_sales;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS customers;
+
+-- ============================================
+-- STEP 2: Create tables
+-- ============================================
+
+CREATE TABLE customers (
+    customer_id INTEGER PRIMARY KEY,
+    name TEXT,
+    email TEXT,
+    country TEXT
+);
+
+CREATE TABLE products (
+    product_id INTEGER PRIMARY KEY,
+    name TEXT,
+    category TEXT,
+    price REAL
+);
+
+CREATE TABLE orders (
+    order_id INTEGER PRIMARY KEY,
+    customer_id INTEGER,
+    order_date TEXT,
+    total_amount REAL,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
+
+CREATE TABLE order_items (
+    order_item_id INTEGER PRIMARY KEY,
+    order_id INTEGER,
+    product_id INTEGER,
+    quantity INTEGER,
+    price REAL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+-- ============================================
+-- STEP 3: Insert sample data
+-- ============================================
+
+INSERT INTO customers VALUES
+(1, 'Alice Johnson', 'alice@gmail.com', 'USA'),
+(2, 'Bob Smith', 'bob@yahoo.com', 'UK'),
+(3, 'Carlos Diaz', 'carlos@gmail.com', 'Mexico');
+
+INSERT INTO products VALUES
+(1, 'Laptop', 'Electronics', 1200.00),
+(2, 'Headphones', 'Electronics', 150.00),
+(3, 'Coffee Maker', 'Home Appliances', 80.00),
+(4, 'Smartphone', 'Electronics', 900.00),
+(5, 'Desk Lamp', 'Home Appliances', 50.00);
+
+INSERT INTO orders VALUES
+(1, 1, '2024-01-10', 1350.00),
+(2, 2, '2024-02-14', 150.00),
+(3, 1, '2024-03-05', 80.00),
+(4, 3, '2024-04-01', 950.00);
+
+INSERT INTO order_items VALUES
+(1, 1, 1, 1, 1200.00),
+(2, 1, 2, 1, 150.00),
+(3, 2, 2, 1, 150.00),
+(4, 3, 3, 1, 80.00),
+(5, 4, 4, 1, 900.00),
+(6, 4, 5, 1, 50.00);
+
+-- ============================================
+-- STEP 4: ANALYSIS QUERIES
+-- ============================================
+
+-- Query 1: View all customers
+SELECT * FROM customers;
+
+-- Query 2: Top 10 most expensive products
+SELECT product_id, name, category, price
+FROM products
+ORDER BY price DESC
+LIMIT 10;
+
+-- Query 3: Total sales per category
+SELECT p.category, SUM(oi.quantity * oi.price) AS total_sales
+FROM order_items oi
+JOIN products p ON oi.product_id = p.product_id
+GROUP BY p.category
+ORDER BY total_sales DESC;
+
+-- Query 4: Orders with customer names
+SELECT o.order_id, c.name AS customer_name, o.total_amount, o.order_date
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+ORDER BY o.order_date DESC;
+
+-- Query 5: Customers who spent above average
+SELECT c.name, SUM(o.total_amount) AS total_spent
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+GROUP BY c.name
+HAVING total_spent &gt; (SELECT AVG(total_amount) FROM orders);
+
+-- Query 6: Total revenue of the store
+SELECT SUM(total_amount) AS total_revenue FROM orders;
+
+-- Query 7: Average order value
+SELECT AVG(total_amount) AS avg_order_value FROM orders;
+
+-- ============================================
+-- STEP 5: CREATE VIEWS AND INDEXES
+-- ============================================
+
+-- View: total spent per customer
+DROP VIEW IF EXISTS customer_sales;
+
+CREATE VIEW customer_sales AS
+SELECT c.customer_id, c.name, SUM(o.total_amount) AS total_spent
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+GROUP BY c.customer_id;
+
+-- View check
+SELECT * FROM customer_sales;
+
+-- Create indexes to optimize performance
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+
+-- ============================================
+-- END OF SCRIPT
+-- ============================================
+</sql><current_tab id="0"/></tab_sql></sqlb_project>
